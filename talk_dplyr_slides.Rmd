@@ -1,7 +1,7 @@
 ---
-title: "Wie schreibt man eine Shiny-App"
-author: "[Andreas Kitsche](andreas.kitsche@kws.com)"
-date: "26.01.2017"
+title: "Data manipulation in R"
+author: "[Andreas Kitsche](andreaskitsche@cbg.contitech.de)"
+date: "16.11.2017"
 output:
   ioslides_presentation:
     highlight: haddock
@@ -21,8 +21,7 @@ output:
     transition: slide
   slidy_presentation:
     incremental: no
-subtitle: für schließende Statistiken?
-bibliography: References.bib
+subtitle: using dplyr
 ---
 
 ```{r setup, include=FALSE}
@@ -30,679 +29,453 @@ knitr::opts_chunk$set(echo = FALSE, warning=FALSE, error=FALSE, message = FALSE)
 ```
 
 ```{r, echo = FALSE}
-library(knitcitations)
-bib <- read.bibtex("References.bib")
+#library(knitcitations)
+#bib <- read.bibtex("References.bib")
 ```
 
-# Einführung - Wie baue ich eine einfache Shiny Applikation
+# Introduction to R (if required ;-))
 
-## App Architektur
+# R basics
+## R basics
 
-Eine Shiny App besteht aus zwei Programmen: 
+This section sets is a reminder on the basic functionality of R. For more details the author refers to the [introductory material](). In addition we define some standards that are essential when working with R and are highly recommended by the author. 
 
-eines zur Definition der Benutzeroberfläche (`ui.r`) 
+## Data organisation
+This topic describes how to organize data in spreadsheets. It is inspired by Karl Broman's excellent [data organisation guide](http://kbroman.org/dataorg/). The following list gives you some advice:
 
-```{r chunck_01, eval=FALSE, echo=TRUE, results='hide'}
-library(shiny)
-# Define UI for application
-ui <- fluidPage()
+1. Data that should be analyzed together should be in one single file
+2. Record your data in `flat file` format:
+  * there should be one separate line for each experimental unit (plant, animal, pot, petri dish, â€¦) 
+  * rows corresponding to subjects and columns corresponding to variables
+3. All columns should have (short) headers
+4. Choose good names for things:  short, but meaningful
+  * donâ€™t use spaces
+  * use underscores or perhaps hyphens
+  * Be careful about extraneous spaces. `glucose` is different from `glucose  ` (with an extra space at the end). 
+  * Avoid special characters (`#`, ``)
+5. Fill in all cells. Use some common code for missing data
+6. No calculations in the raw data files 
+7. Don't use font color or highlighting as data 
+
+
+
+## Writing your R code
+Avoid writing your R code into the Console. Ever write your code into an edition and send the code to the Console. Save your R script with a meaningful name in an `.R` file, e.g. `data_manipulation_in_r.R`. When writing your code use a consistent style so it is easy to read. The following list gives you some advice:
+
+### Structure of the R Script
+
+1. include a header specifying the topic, author, and date of the script as comment lines
+2. start with listing the required R packages
+3. read in data
+4. use short, but precise object names
+5. make comments, structure the code
+
+### Naming Conventions
+
+1. Names should indicate use and purpose
+2. File names should be descriptive
+3. File names should end in `.R`
+4. Variable and function names should be lowercase
+5. Use an underscore (`_`) to separate words within a name
+6. avoid using names of existing functions and variables
+
+
+### Comments
+
+1. Should indicate the purpose of the code
+2. Should always precede code
+
+### General Layout
+
+1. Be consistent with indentation, two spaces is recommended
+2. Define a maximum line length, 80 characters is recommended
+3. Place spaces around all operators (`=`, `+`, `-`, `<-`)
+4. Include spaces after commas
+
+### General Syntax
+
+1. Use `<-` for assignment not `=`
+2. Use `TRUE` and `FALSE` rather than `T` and `F`
+3. Avoid the use of `;`
+4. Opening curly braces `{` should never be on their own line
+5. Closing braces `}` should always be on their own line
+
+
+
+## Importing data
+### Import
+R provides several function to import data sets. Within this course we will use the base R `read.table` function. If you use R Studio you can also import the data set via the *Import Dataset* bottom at the *Environment* pane.
+The function `read.table` reads a file in table format and creates a data frame from it. The function `read.csv` is identical to `read.table` except for the defaults. Is is intended for reading *comma separated value* files (`.csv`). Specifying some argument will speed up the data import and control the output file, e.g.:
+
+* `header` - a logical value indicating whether the file contains the names of the variables as its first line
+* `sep` - the field separator character
+* `dec` - the character used in the file for decimal points
+* `col.names` - a vector of optional names for the variables
+* `na.strings` - a character vector of strings which are to be interpreted as NA values
+* `colClasses` - character. A vector of classes to be assumed for the columns
+* `nrows` - integer: the maximum number of rows to read in
+* `stringsAsFactors` - logical: should character vectors be converted to factors
+
+
+### First steps
+The first steps after you have imported your data set into R is to get an overview using the following functions:
+
+```{r eval=TRUE, results='hide',echo=TRUE, cache=TRUE}
+View(iris)
+head(iris, n = 10)#shows the first 10 lines of the data frame
+tail(iris, n = 10)#shows the last 10 lines of the data frame
+str(iris)#returns the structure of the object
+dim(iris)#return the dimension (number of rows and number of columns) of the data frame
+names(iris)#return the names of the variables 
+#check the levels of a factor variable
+levels(iris$Species)
 ```
 
-und ein zweites in dem die Analyse mit
-R stattfindet (`server.r`) 
 
-```{r chunck_02, eval=FALSE, echo=TRUE, results='hide'}
-# Define server logic
-server <- function(input, output) {}
-# Run the application 
-shinyApp(ui = ui, server = server)
+# Introduction - The Data Science Workflow
+
+## The data science workflow
+
+Tis talk focuses on tidy and tranform your data to afterwards easily visualize and model your data.
+
+![](figures/data-science.png)
+
+# Introduction - the tidyverse
+![](figures/tidyverse_hex.png)
+
+## Introduction - the tidyverse
+
+
+```{r chunck_01, eval=TRUE, echo=TRUE, results='hide', message=TRUE}
+#install.packages("tidyverse")#install the package, if nessecary
+library(tidyverse)
+```
+Tidy code is easier to write, read, maintain and almost always faster than the base R counterparts.
+
+## Introduction - Prerequisites
+
+Within this talk we will use the following datasets:
+
+```{r chunck_02, eval=TRUE, echo=TRUE, results='hide'}
+?ggplot2::mpg
+?datasets::iris
+library(nycflights13)
+?nycflights13::flights
 ```
 
-## App Architektur
+## Introduction - tidy data set
 
-![](figures/shiny_01.png)
+> In brief, when your data is tidy, each column is a variable, and each row is an observation. Tidy data is important because the consistent structure lets you focus your struggle on questions about the data, not fighting to get the data into the right form for different functions. - Hadley Wickham
 
-## Erstellung der Benutzeroberfläche
+# Tibbles
 
-Elemente für die Benutzeroberfläche werden als Argumente der Funktion `fluidPage()` übergeben
+## What are tibbles?
 
-```{r chunck_03, eval=FALSE, echo=TRUE, results='hide'}
-# Define UI for application
-ui <- fluidPage("Hello world")
-```
+> Tibbles are data frames, but they tweak some older behaviours to make life a little easier. - Hadley Wickham
 
-Shiny generiert automatisch das *html* file zum Aufbau der Benutzeroberfläche:
-
-```
-<div class="container-fluid">Hello world</div>
-```
-
-## Ein- und Ausgabewerte einfügen
-
-Elemente für die Applikation werden als Argumente der Funktion `fluidPage()` übergeben
-
-```{r chunck_04, eval=FALSE, echo=TRUE, results='hide'}
-# Define UI for application
-ui <- fluidPage(
-  # *Input() functions,
-  # *Output() functions
+```{r chunck_03, eval=TRUE, echo=TRUE, results='markup'}
+tibble(
+  x = 1:5, 
+  y = 1, 
+  z = letters[1:5]
 )
 ```
 
-# Inputs
+## What are tibbles?
 
-## Inputs
+`tibble()` does much less than `data.frame()`:
 
-Eingabewerte werden mit Hilfe der `*Input()` Funktion gebaut, z.B.
+* it never changes the type of the inputs (e.g. it never converts strings to factors!)
+* it never changes the names of variables
+* it never creates row names
 
-```{r chunck_05, eval=FALSE, echo=TRUE, results='markup'}
-# Define UI for application
-ui <- fluidPage(
-  sliderInput(inputId = "num_slider_id",
-              label = "Choose a number",
-              value = 25, min = 1, max = 100)
+## What are tibbles?
+
+```{r chunck_04, eval=TRUE, echo=TRUE, results='markup'}
+test_data <- data.frame(
+  x = 1:5, 
+  y = 1, 
+  z = letters[1:5]
+)
+str(test_data)
+```
+
+# Introduction to dplyr
+
+## Introduction to dplyr
+The `dplyr` package (among other things) reimplements 5 of my most common R data manipulation idioms - often, in blazing fast C++.
+
+![](figures/dplyr.png)
+
+## Datamanipulation in R
+The basic data manipulation task in R are:
+
+* selecting columns
+* filtering rows
+* ordering data
+* calculating new variables from existing variables
+* summarizing data sets
+
+In addition to the base R functionality of data wrangling (e.g., `subset`, `aggregate`, `$` operator, `[]` sub-setting, ...) we introduce the package `dplyr`. So why to learn new functions when everything is fine? 
+
+* Great for the most important data manipulation tools needed for data analysis 
+* Provide blazing fast performance for in-memory data by writing key pieces in C++
+* Intuitive to write and easy to read, especially when using the "chaining" syntax (covered below)
+* all required data manipulation functions in one package
+* Common structure (for all dplyr verbs)
+
+You can find an exhaustive [translation table](http://www.significantdigits.org/2017/10/switching-from-base-r-to-tidyverse/) from [Rajesh Korde](http://www.significantdigits.org/).
+
+### selecting columns
+Select a subset of the columns of a data frame by names 
+base R style:
+```{r ase R select, eval=TRUE, results='hide'}
+weather[,c("origin", "temp", "precip")]
+```
+
+`select()` function:
+```{r select dplyr, eval=TRUE, results='hide', warning=FALSE, message=FALSE}
+library(dplyr)
+select(weather, origin, temp, precip)
+select(weather, origin:temp)
+select(weather, -(year:hour))
+```
+Select a subset of the columns of a data frame by numbers  
+base R style:
+```{r base R select number, eval=TRUE, results='hide'}
+weather[,1:3]
+```
+dplyrs `select` function:
+```{r select number dplyr, eval=TRUE, results='hide', warning=FALSE, message=FALSE}
+select(weather, 1:3)
+```
+
+### Filter
+select a subset of the rows of a data frame
+
+base R style
+```{r filder old, eval=TRUE, results='hide'}
+weather[weather$origin=="EWR" | weather$month==1,]
+```
+
+`subset()` function
+```{r subset, eval=TRUE, results='hide'}
+subset(weather, origin=="EWR" | origin==1)
+subset(weather, origin=="EWR" & month==1)
+```
+
+dplyrs `filter()` function
+```{r filter new, eval=TRUE, results='hide'}
+filter(weather, origin=="EWR" | origin=="JFK")
+filter(weather, origin=="EWR" & month==1)
+```
+
+Select a subset of the rows of a data frame by numbers.
+
+base R style
+```{r filter numbers, eval=TRUE, results='hide'}
+weather[1:10,]
+```
+dplyrs `slice()` function
+
+```{r filter numbers dplyr, eval=TRUE, results='hide'}
+slice(weather, 1:10)
+```
+
+### Arrange
+Arrange rows by variables (reorder the rows).
+
+Base R `order()` function
+
+```{r base order, eval=TRUE, results='hide'}
+weather[order(weather$temp, weather$precip),]
+```
+
+dplyrs `arrange()` function
+
+```{r arrange dpylr, results='hide', eval=TRUE}
+arrange(weather, temp, precip)
+arrange(weather, desc(temp))#Use desc() to order a column in descending order
+```
+
+
+
+### Mutate
+Add new columns that are functions of existing columns.
+
+base R style
+
+```{r mutate base, eval=TRUE, results='hide'}
+weather$precip_to_temp <- weather$precip/weather$temp
+base::transform(weather, precip_to_temp = precip/temp)
+```
+
+dplyrs `mutate()` function
+
+```{r dplyr arrange, eval=TRUE, results='hide'}
+mutate(weather, precip_to_temp = precip/temp)
+```
+
+`mutate()` allows you to refer to columns that you just created
+
+```{r muatate multiple, results='hide', eval=TRUE}
+mutate(weather, 
+       precip_to_temp = precip/temp,
+       precip_to_temp_10 = precip_to_temp*10)
+```
+Note: If you only want to keep the new variables, use `transmute()`
+
+### Summarising data sets
+
+base R `aggregate()` function computes summary statistics of data subsets
+
+```{r aggregate base, eval=TRUE, results='hide'}
+aggregate(weather$temp, by = list(origin = weather$origin), FUN = mean)
+aggregate(temp ~ origin, data = weather, FUN = mean)#formula notation
+```
+
+dplyr `summarise()` function collapses a data frame to a single row
+
+```{r dypyr summarise, eval=TRUE, results='hide'}
+summarise(weather, mean_temp = mean(temp, na.rm=TRUE))
+summarise(weather, mean_temp = mean(temp, na.rm=TRUE),
+                   sd_temp   = sd(temp),
+                   median_sd = median(temp))
+#With data frames, you can create and immediately use summaries
+summarise(weather, mean_temp = mean(temp, na.rm=TRUE),
+                     sd_temp = sd(temp),
+                mean_sd_temp = mean_temp/sd_temp)
+```
+
+Commonalities of `dplyr` verbs:
+
+* The first argument is a data frame
+* The subsequent arguments describe what to do with it, and you can refer to columns in the data frame directly without using `$`.
+* The result is a new data frame
+
+### Grouped operations
+
+```{r dplyr group_by, eval=TRUE, results='hide'}
+dplyr::summarise(group_by(weather, origin), max(temp))
+dplyr::summarise(group_by(weather, origin), length(temp))
+dplyr::summarise(group_by(weather, origin), count_origin=n())
+dplyr::summarise(group_by(weather, origin, year), count_origin_year=n())
+```
+
+
+## Datamanipulation workflow
+
+## The pipe operator
+
+![](figures/pipe.png)
+
+### Chaining or Pipelining
+
+Usual way to perform multiple operations
+
+Save objects :
+
+```{r save style, eval=TRUE, results='hide'}
+Data_1 <- filter(weather, origin=="EWR", year==2013, between(precip, 0.05, Inf))
+Data_2 <- select(Data_1,  origin:temp)
+Data_3 <- mutate(Data_2, temp_square = temp^2)
+Data_4 <- group_by(Data_3, origin, month)
+Data_5 <- summarise(Data_4, min(temp_square))
+Data_5
+```
+
+Nesting operations: Hard to read Code! (Jumping around the code):
+
+```{r nested stryle, eval=TRUE, results='hide'}
+summarise(
+  group_by(
+    mutate(
+      select(
+        filter(weather, origin=="EWR", year==2013, between(precip, 0.05, Inf))
+      , origin:temp)
+      , temp_square = temp^2)
+    ,origin, month)
+  , min(temp_square))
+```
+
+Can write commands in a natural order by using the `%>%` infix operator (which can be pronounced as pipe)
+
+* By default the left-hand side will be piped in as the first argument of the function appearing on the right-hand side
+* When the left-hand side is needed at a position other than the first, one can use the dot `.`, as placeholder
+
+```{r dpylr pipe, results='hide', eval=TRUE}
+weather %>% 
+  filter(origin=="addEWR", year==2013, between(precip, 0.05, Inf)) %>%
+  select(origin:temp) %>%
+  mutate(temp_square = temp^2) %>%
+  group_by(origin, month) %>%
+  summarise(min(temp_square))
+```
+
+# Further useful functions in the tidyverse
+
+## Get an overview of your data
+
+```{r dplyr glimpse, results='hide', eval=TRUE, echo = TRUE}
+#base R 
+utils::str(iris)#Compactly Display the Structure of an Arbitrary R Object
+#tibble version
+tibble::glimpse(iris)#This makes it possible to see every column in a data frame.
+```
+## Combine multiple data frames
+
+```{r dplyr combine, results='hide', eval=TRUE, echo = TRUE}
+test_data_1 <- tibble(
+    x = 1:5, 
+    y = 1, 
+    z = letters[1:5]
+)
+test_data_2 <- tibble(
+  x = 1:8, 
+  y = 1, 
+  r = letters[1:8]
 )
 ```
+## Combine multiple data frames
 
-```
-<div class="form-group shiny-input-container">
-  <label class="control-label" for="num_slider_id">Choose a number</label>
-  <input class="js-range-slider" id="num_slider_id" data-min="1" data-max="100"
-  data-from="25" data-step="1" data-grid="true" data-grid-num="9.9"
-  data-grid-snap="false" data-keyboard="true" data-keyboard-step="1.01010101010101"
-  data-drag-interval="true" data-data-type="number" data-prettify-separator=","/>
-</div>
+```{r dplyr combine2, results='markup', eval=TRUE, error=TRUE, echo = TRUE}
+#base R 
+base::rbind(test_data_1, test_data_2)#Compactly Display the Structure of an Arbitrary R Object
+#tibble version
+dplyr::bind_rows(test_data_1, test_data_2)#This makes it possible to see every column in a data frame.
 ```
 
-##
+## Rename variable names
 
-![](figures/shiny_02.png)
-
-# Outputs
-
-## Outputs
-
-Ausgabewerte werden mit Hilfe der `*Output()` Funktion gebaut, z.B.
-
-```{r chunck_06, eval=FALSE, echo=TRUE, results='markup'}
-# Define UI for application
-ui <- fluidPage(
-  plotOutput(outputId = "plot_id",
-             width = "100%", 
-             height = "400px")
-)
+```{r rename, results='markup', eval=TRUE, error=TRUE, echo = TRUE}
+rename(iris, petal_length = Petal.Length,
+             sepal_length = Sepal.Length,
+             petal_width = Petal.Width,
+             sepal_width = Sepal.Width)
+```
+## Helper functions or `select()`
+```{r select_helper, results='markup', eval=TRUE, error=TRUE, echo = TRUE}
+select(iris, starts_with("Petal"))
+select(iris, ends_with("Width"))
+# Move Species variable to the front
+select(iris, Species, everything())
+# Drop variables with -
+select(iris, -starts_with("Petal"))
 ```
 
-Das eigentliche plot Objekt wird in der Server Funktion generiert!
+## Operate on a selection of variables
 
-## Outputs
+The variants suffixed with `_if`, `_at` or `_all` apply an expression (sometimes several) to all variables within a specified subset. This subset can contain all variables (`_all` variants), a `vars()` selection (`_at` variants), or variables selected with a predicate (`_if` variants).
 
-Funktion  | fügt ein:
-------------- | -------------
-dataTableOutput()  | interaktive Tabelle
-htmlOutput()  | HTML
-imageOutput() | Bild
-plotOutput()  | Plot
-tableOutput() | statische Tabelle
-textOutput()  | Text
-uiOutput()   | Shiny UI Elemment
-verbatimTextOutput() | Text
+The verbs with scoped variants are:
 
-# Erstellung des server.r Programms
+* `mutate()`, `transmute()` and `summarise()`. See `summarise_all()`.
+* `filter()`. See `filter_all()`.
+* `group_by()`. See `group_by_all()`.
+* `rename()` and `select()`. See `select_all()`.
+* `arrange()`. See `arrange_all()`
 
-## Erstellung des server.r Programms
-
-Das `server.r` Programm beherbergt eine Funktion mit Anleitungen, wie die R-Objekte für die Benutzeroberfläche erstellt und aktualisiert werden sollen
-
-```{r chunck_07, eval=FALSE, echo=TRUE, results='markup'}
-# Define server logic
-server <- function(input, output) {
-  
-}
+```{r scoped, results='markup', eval=TRUE, error=TRUE, echo = TRUE}
+mutate_if(.tbl = iris, .predicate = is.factor, .funs = as.character)
 ```
 
-Drei Regeln sind bei der Erstellung der `server` Funktion zu beachten:
-
-1. Speichern der auszugebenen Objekte in `output$`
-2. Erstellen der auszugebenen Objekte mit der `render*()` Funktion
-3. Ansteuern von Eingabewerten mit Hilfe von `input$`
-
-## Auszugebene Objekte werden in `output$` gespeichert {.smaller}
-
-```{r chunck_08, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-# Define UI for application
-ui <- fluidPage(
-  "Iris data set",
-  plotOutput(outputId = "iris_scatterplot")
-)
-# Define server logic
-server <- function(input, output) {
-  
-  output$iris_scatterplot <- # some code ...
-  })
-}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-## Erstellen der auszugebenen Objekte mit der `render*()` Funktion {.smaller}
-
-```{r chunck_09, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-library(ggplot2)
-# Define UI for application
-ui <- fluidPage(
-  "Iris data set",
-  plotOutput(outputId = "iris_scatterplot")
-)
-# Define server logic
-server <- function(input, output) {
-  output$iris_scatterplot <- renderPlot({
-    p <- ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width))
-    p + geom_point(aes(color = Species))
-  })
-}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-## Erstellen der auszugebenen Objekte mit der `render*()` Funktion {.smaller}
-
-Man wähle eine `render*()` Funktion, welche den gewünschten Output-Typ erstellt
-
-Funktion  | erstellt:
-------------- | -------------
-renderDataTable()  | interaktive Tabelle
-renderImage()  | Bild (als Link zu einem source file)
-renderPlot() | Plot
-renderPrint()| Codeblock aus geprintetem output
-renderTable() | statische Tabelle
-renderText() | charcter string
-renderUI()   | Shiny UI Element
-
-innerhalb der `render*()` Funktion befindet sich der Code zur Erstellung des Objektes
-
-
-## Eingabewerte werden mit `input$` angesteuert {.smaller}
-
-```{r chunck_10, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-library(ggplot2)
-# Define UI for application
-ui <- fluidPage(
-  "Iris data set",
-  selectInput(inputId = "input_x_variable", 
-              label = "X Variable", 
-              choices = colnames(iris), 
-              selected = colnames(iris)[1]),
-  selectInput(inputId = "input_y_variable", 
-              label = "Y Variable", 
-              choices = colnames(iris), 
-              selected = colnames(iris)[2]),
-  plotOutput(outputId = "iris_scatterplot")
-)
-# Define server logic
-server <- function(input, output) {
-  output$iris_scatterplot <- renderPlot({
-    p <- ggplot(data = iris, aes_string(x = input$input_x_variable,       
-                                        y = input$input_y_variable))
-    p + geom_point(aes(color = Species))
-  })
-}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-# Beispiele
-
-## Externe Datensätze hochladen {.smaller}
-
-```{r chunck_11, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-library(ggplot2)
-library(data.table)
-#write.csv(iris, "iris.csv", row.names = FALSE)
-#Define UI for application
-ui <- fluidPage(
-  "Externe Datensätze hochladen",
-  # Copy the line below to make a file upload manager
-  fileInput(inputId = "upload_file_id", label = "File input"),
-  #define a text output that displays the return of fileInput() function
-  verbatimTextOutput(outputId = "output_text_id"),
-  #define an interactive table of the uploaded data set
-  dataTableOutput(outputId = "output_table_id")
-)
-# Define server logic
-server <- function(input, output) {
-  # You can access the value of the fileInput() function with input$output_text_id
-  output$output_text_id <- renderPrint({
-    str(input$upload_file_id)
-  })
-  output$output_table_id <- renderDataTable({
-    if(is.null(input$upload_file_id)){return(NULL)}else{
-      uploaded_data <- fread(input$upload_file_id[1, 4])}
-  }, options = list(lengthChange = TRUE))
-}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-## Dateien (Tabellen, Grafiken) herunterladen {.smaller}
-
-```{r chunck_12, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-# Define UI for application
-ui <- fluidPage(
-  "Hello world",
-  selectInput(inputId = "select_data", 
-              label = "Select data set", 
-              choices = data(package = "datasets")$results[,3]),
-  dataTableOutput(outputId = "table_id"),
-  downloadButton(outputId = "download_id")
-  )
-# Define server logic
-server <- function(input, output) {
-  output$table_id <- renderDataTable({
-    as.data.frame(get(input$select_data))
-  })
-  
-  output$download_id <- downloadHandler(
-    filename = function(){ 
-      paste(input$select_data, '.csv', sep='') 
-    },
-    content = function(file){
-      write.csv(as.data.frame(get(input$select_data)), file)
-    }
-  )
-}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-## Dateien (Tabellen, Grafiken) herunterladen {.smaller}
-
-```{r chunck_12b, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-# Define UI for application
-ui <- fluidPage(
-  "Hello world",
-  selectInput(inputId = "select_data", 
-              label = "Select data set", 
-              choices = data(package = "datasets")$results[,3]),
-  plotOutput(outputId = "download_plot_id"),
-  downloadButton(outputId = "download_id")
-  )
-# Define server logic
-server <- function(input, output) {
-  output$plot_id <- renderPlot({
-    data_tmp <- as.data.frame(get(input$select_data))
-    if(ncol(data_tmp) < 2){
-      return(NULL)
-    }else{
-      plot(data_tmp[,1:2])
-    }
-  })
-  output$download_plot_id <- downloadHandler(
-    
-    filename = function(){ 
-      paste(input$select_data, '.pdf', sep='') 
-    },
-    
-    content = function(file){
-      pdf(file)
-      plot(as.data.frame(get(input$select_data))[,1:2])
-      dev.off()
-    })
-  }
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-
-# Wie baue ich reaktive Umgebungen
-
-## Was ist Reaktivität?
-
-Shiny Applikationen beruhen weitestgehend auf die Zurverfügungstellung von *input* Werten, Bereitstellung dieser in *R* und Rücksendung der evaluierten R Objekte als *output* zur Webseite.
-
-```
-input values => R Code => output values
-```
-
-## Was ist Reaktivität?
-
-Shiny verfügt über drei reaktive Programmierobjekte:
-
-* reactive source (**Reactive values**) - *input* Objekt (slider, text, numeric)
-* reactive conductor (**Reactive expressions**) - `reactive()` Funktion
-* reactive endpoint (**Observers**) - *output* Objekt (plot, table)
-
-![](figures/shiny_04.png)
-
-Ein *input* Objekt kann mit mehreren *output* Objekten verbunden sein und umgekehrt.
-
-##
-
-Die Auswertugsroutine einzelner Funktionen wird durch den Ort ihrer Definition in der `server` Funktion bestimmt:
-
-
-```{r chunck_13, eval=FALSE, echo=TRUE, results='markup'} 
-library(shiny)
-
-1. some code ... run once when app is launched
-
-# Define UI for application
-ui <- fluidPage("Hello world")
-# Define server logic
-server <- function(input, output) {
-  
-  2. some code ... run once each time a user visits the app
-  
-  output$* <- render*({
-    
-    3. some code ... run each time a user changes a widget that output$* relies on
-    
-  })
-}
-shinyApp(ui = ui, server = server)
-```
-
-
-# Die Benutzeroberfläche definieren
-
-## Einbinden statischer Elemente {.smaller}
-
-Innerhalb der `fluidPage()` Funktion kann statischer *html* Code eingebunden werden
-
-```{r chunck_14, eval=FALSE, echo=TRUE, results='markup'} 
-library(shiny)
-# Define UI for application
-ui <- fluidPage(
-  
-  HTML("
-    <h1>Ein Beispiel für Header</h1>
-    <p>Ein Beispiel für Paragraph</p>
-    ")
-
-)
-# Define server logic
-server <- function(input, output) {}
-shinyApp(ui = ui, server = server)
-```
-
-## Einbinden statischer Elemente {.smaller}
-
-R shiny verfügt über eine große Banbreite von vordefinierten *HTML Builder Functions*
-
-```{r chunck_15, eval=FALSE, echo=TRUE, results='markup'} 
-library(shiny)
-# Define UI for application
-ui <- fluidPage(
-  #use tags
-  tags$p("Dies ist eine Beispiel", 
-         tags$a(href = "https://shiny.rstudio.com/", "Shiny"), 
-         "App."),
-  #use simple functions for constructing HTML documents
-  p("Es ist einfach GUI mit", 
-    a(href = "https://cran.r-project.org/", "R"),
-    code("Code"),
-    em("zu"),
-    strong("erstellen")) 
-)
-# Define server logic
-server <- function(input, output) {}
-shinyApp(ui = ui, server = server)
-```
-
-## Häufig verwendete *tags* Funktionen {.smaller}
-
-Funktion  | erstellt:
-------------- | -------------
-a()  | Hyperlink
-br()  | Zeilenumbruch
-code()| Formatiert Text wie Computercode
-em()  | kursiv
-h1(), h2(), ... | Überschriften
-hr()  | horizontale Linie
-img() | Bild
-p()   | Paragraf
-strong()| fett
-
-Siehe auch [Shiny HTML Tags Glossary](https://shiny.rstudio.com/articles/tag-glossary.html)
-
-## Organisation der *UI* Elemente {.smaller}
-
-Vordefinierte [Layout Funktionen](http://shiny.rstudio.com/articles/layout-guide.html) ermöglichen die Organisation der *UI* Elemente. Wir verwenden Panels um Gruppen von *UI* Elementen zu bilden.
-
-```{r chunck_16, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-# Define UI for application
-ui <- fluidPage(
-  titlePanel(title = "Example App"),
-  sidebarLayout(
-    sidebarPanel(
-      *Input(),
-      *Input(),
-      downloadButton()
-      ),
-    mainPanel(
-      *Output(),
-      *Output()
-    )
-  )
-)
-# Define server logic
-server <- function(input, output) {}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-
-
-##
-
-![](figures/shiny_03.png)
-
-## Organisation der *UI* Elemente {.smaller}
-
-Die *UI* Elemente können in unterschiedlichen Tabs mit der Funktion `tabPanel()` definiert werden:
-
-```{r chunck_17, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-# Define UI for application
-ui <- fluidPage(
-  titlePanel(title = "Example App"),
-  sidebarLayout(
-    sidebarPanel(
-      *Input(),
-      *Input(),
-      downloadButton()
-      ),
-    mainPanel(
-      tabsetpanel(
-        tabPanel(
-          *Output()
-        ),
-        tabPanel(
-          *Output()
-        )
-      )
-    )
-  )
-)
-# Define server logic
-server <- function(input, output) {}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-## Organisation der *UI* Elemente {.smaller}
-
-Eine Erweiterung zu den standard Shiny-Layoutimplementierungen bietet das Paket `shinydashboard` an:
-
-```{r chunck_18, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-library(shinydashboard)
-
-ui <- dashboardPage(
-  dashboardHeader(),
-  dashboardSidebar(),
-  dashboardBody()
-)
-
-server <- function(input, output) { }
-
-shinyApp(ui, server)
-```
-
-# Interaktive Grafiken einbinden
-
-## Interaktive Grafiken einbinden
-
-Interaktive Grafiken ermöglichen es zusätzliche Information zu Datenpunkten zur Verfügung zu stellen (mouse hover), Datenpunkte zu selektieren, oder Hyperlinks an Datenpunkte zu binden.
-
-Es stehen mehrere Ebenen zur Implementierung interaktiver Grafiken zur Verfügung:
-
-* Shinys eingebaute Funktionalität für R Standardplots (`plot()`) und  [ggplot2](http://ggplot2.org/)
-* [htmlwidgets](http://www.htmlwidgets.org/) JavaScript Visualisierungsbibliotheken
-* [crosstalk](http://rstudio.github.io/crosstalk/) ermöglicht die Verbindung mehrerer *htmlwidgets*
-
-## Einbinden von *htmlwidgets* {.smaller}
-
-```{r chunck_19, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-library(plotly)
-# Define UI for application
-ui <- fluidPage(
-  "Iris data set",
-  selectInput(inputId = "input_x_variable", 
-              label = "X Variable", 
-              choices = colnames(iris), 
-              selected = colnames(iris)[1], 
-              multiple = FALSE),
-  selectInput(inputId = "input_y_variable", 
-              label = "Y Variable", 
-              choices = colnames(iris), 
-              selected = colnames(iris)[2], 
-              multiple = FALSE),
-  plotlyOutput(outputId = "iris_scatterplot")
-)
-# Define server logic
-server <- function(input, output) {
-   output$iris_scatterplot <- renderPlotly({
-    p <- ggplot(data = iris, aes_string(x = input$input_x_variable,
-                                        y = input$input_y_variable))
-    p + geom_point(aes(color = Species))
-  })
-}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-## Interaktive Plots mit basic plots und ggplot2 {.smaller}
-
-Innerhalb der `renderPlot()` Funktion können folgende Argumente *mouse-based* Interaktionen zur Verfügung stellen:
-
-Argument  | Aktion
-------------- | -------------
-`click = "mouse_event_id"`  | Plot sendet Koordinaten zum Server bei einfachem Mausklick
-`dblclick  = "mouse_event_id"` | Plot sendet Koordinaten zum Server bei doppeltem Mausklick
-`hover  = "mouse_event_id"` | Plot sendet Koordinaten zum Server bei Maushover
-`brush = "mouse_event_id"` | Plot sendet Koordinaten des gezeichneten Rechteckes (`xmin`, `xmax`, `ymin`, and `ymax`) an Server
-
-Die Koordinaten werden an den Server über `input$mouse_event_id` übergeben.
-
-## Interaktive Plots mit basic plots und ggplot2 {.smaller}
-
-```{r chunck_20, eval=FALSE, echo=TRUE, results='markup'}
-library(shiny)
-library(plotly)
-# Define UI for application
-ui <- fluidPage(
-  "Iris data set",
-  selectInput(inputId = "input_x_variable", 
-              label = "X Variable", 
-              choices = colnames(iris), 
-              selected = colnames(iris)[1], 
-              multiple = FALSE),
-  selectInput(inputId = "input_y_variable", 
-              label = "Y Variable", 
-              choices = colnames(iris), 
-              selected = colnames(iris)[2], 
-              multiple = FALSE),
-  plotOutput(outputId = "iris_scatterplot",
-             click = "plot_click"),
-  verbatimTextOutput("info_plot")
-)
-# Define server logic
-server <- function(input, output) {
-   output$iris_scatterplot <- renderPlotly({
-    p <- ggplot(data = iris, aes_string(x = input$input_x_variable,
-                                        y = input$input_y_variable))
-    p + geom_point(aes(color = Species))
-    })
-   
-    output$info_plot <- renderText({
-      paste0("x=", input$plot_click$x, "\ny=", input$plot_click$y)
-      })
-}
-# Run the application 
-shinyApp(ui = ui, server = server)
-```
-
-# Bereitstellung der Shiny Applikation
-
-## Bereitstellung der Shiny Applikation {.smaller}
-
-Es bestehen mehrere Möglichkeiten Shiny Apps zur Verfügung zu stellen:
-
-* [shinyapps.io](https://www.shinyapps.io/) - Dienstleistungsplattform um Shiny Apps zu verwalten und speichern
-* [Shiny server](https://www.rstudio.com/products/shiny/shiny-server/) - Aufbau eines Webservers zur internen und externen Publikation
-* [lokal](https://shiny.rstudio.com/articles/deployment-local.html)
-* [als Funktion](https://shiny.rstudio.com/articles/function.html):
-
-
-```{r chunck_21, eval=FALSE, echo=TRUE, results='markup'}
-beispiel_funktion <- function(var) {
-  require(shiny)
-  shinyApp(
-    ui = fluidPage(plotOutput("hist")),
-    server = function(input, output) {
-      output$hist <- renderPlot( 
-        hist(var, col = "skyblue", border = "white") 
-      )
-    })
-}
-beispiel_funktion(faithful$eruptions)
-```
-
-
-# Erweiterungen
-
-## Erweiterungen
-
-Diverse Pakete zur Erweiterung der shiny Grundfunktionalität stehen zur Verfügung:
-
-[shinydashboard](http://rstudio.github.io/shinydashboard/) - Dashboard Layout
-[Shiny Themes](http://rstudio.github.io/shinythemes/) - CSS themes
-[shinyjs](https://github.com/daattali/shinyjs/blob/master/README.md) - JavaScript actions
-[htmlwidgets](http://www.htmlwidgets.org/) - JavaScript Datenvisualisierungstools
-
-Weiterhin besteht die Möglichkeit:
-
-* Shiny Apps in [R Markdown](http://rmarkdown.rstudio.com/) Dokumente einzubinden, wie z.B.
-    + *ioslides* Präsentation
-    + *html* Dukumentation
-
-## Referenzen
-
-* Chang, Winston, Joe Cheng, JJ Allaire, Yihui Xie, and Jonathan
-McPherson. 2016. Shiny: Web Application Framework
-for R. https://CRAN.R-project.org/package=shiny.
-
-* R Core Team. 2016. R: A Language and Environment for Statistical
-Computing. Vienna, Austria: R Foundation for
-Statistical Computing. https://www.R-project.org/.
-
-* http://shiny.rstudio.com/ 
