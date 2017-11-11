@@ -537,6 +537,34 @@ Currently dplyr supports four join types:
 * `right_join()` - return all rows from *y*, and all columns from *x* and *y*. Rows in *y* with no match in *x* will have NA values in the new columns. If there are multiple matches between *x* and *y*, all combinations of the matches are returned.
 * `full_join()` - return all rows and all columns from both *x* and *y*. Where there are not matching values, returns NA for the one missing.
 
+# Reshaping the data set
+<center>
+![](figures/tidyr.png){ width=35% }
+</center>
+
+## Reshaping the data set
+
+`tidyr::gather()` takes multiple columns, and gathers them into key-value pairs: it makes "wide" data longer.  Other names for gather include melt (reshape2), pivot (spreadsheets) and fold (databases). 
+
+```{r gather, results='markup', eval=TRUE, error=TRUE, echo = TRUE}
+mini_iris <-
+  iris %>%
+  group_by(Species) %>%
+  slice(1)
+mini_iris %>% gather(key = flower_att, value = measurement, -Species)
+```
+
+
+## Reshaping the data set
+`tidyr::spread()`, takes two columns (a key-value pair) and spreads them in to multiple columns, making "long" data wider. Spread is known by other names in other places: it's cast in reshape2, unpivot in spreadsheets and unfold in databases. spread() is used when you have variables that form rows instead of columns. 
+
+```{r spread, results='markup', eval=TRUE, error=TRUE, echo = TRUE}
+mini_iris %>% 
+  gather(key = flower_att, value = measurement, -Species) %>%
+  spread(key = flower_att, value = measurement)
+```
+
+
 #References
 
 ##Further information is given at:
@@ -560,3 +588,4 @@ Currently dplyr supports four join types:
     +  `forcats` for categorical variables (factors)
 * Functional programming in R using `purrr`
 * (interactive) visualisations in R using `ggplot2` (and `plotly`)
+* Creating dashboards using Shiny
