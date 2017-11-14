@@ -39,29 +39,9 @@ knitr::opts_chunk$set(echo = FALSE, warning=FALSE, error=FALSE, message = FALSE,
 ## R basics
 
 
-This section sets is a reminder on the basic functionality of R. For more details the author refers to the [introductory material](http://colinfay.me/intro-to-r/). 
+For an overview on the basic functionality of R the author refers to this [introductory material](http://colinfay.me/intro-to-r/). 
 
 In addition we define some standards that are essential when working with R and are highly recommended by the author. 
-
-## Data organisation
-This topic describes how to organize data in spreadsheets. It is inspired by Karl Broman's excellent [data organisation guide](http://kbroman.org/dataorg/). The following list gives you some advice:
-
-* Data that should be analyzed together should be in one single file
-* Record your data in `flat file` format:
-    + there should be one separate line for each experimental unit (plant, animal, pot, petri dish, ...) 
-    + rows correspond to subjects and columns correspond to variables
-* All columns should have (short) headers
-
-## Data organisation
-* Choose good names for things:  short, but meaningful
-    + don't use spaces
-    + use underscores `_` or perhaps hyphens `-`
-    + Be careful about extraneous spaces. `glucose` is different from `glucose ` (with an extra space at the end). 
-    + Avoid special characters (`#`, ``)
-* Fill in all cells. Use some common code for missing data
-* No calculations in the raw data files 
-* Don't use font color or highlighting as data 
-
 
 
 ## Writing your R code
@@ -114,16 +94,6 @@ The following list gives you some advice
 * Opening curly braces `{` should never be on their own line
 * Closing braces `}` should always be on their own line
 
-
-
-## Importing data
-R provides several function to import data sets. 
-Within this course we will use the base R `read.table` function. 
-If you use R Studio you can also import the data set via the *Import Dataset* bottom at the *Environment* pane.
-The function `read.table` reads a file in table format and creates a data frame from it. 
-******
-
-See also function `fread()` (`data.table` package) and `read_csv` (`readr` package)
 
 ## First steps
 The first steps after you have imported your data set into R is to get an overview using the following functions:
@@ -181,6 +151,9 @@ library(dplyr)
 dplyr::starwars
 ```
 
+<center>
+![](figures/datasets.png){ width=70%}
+</center>
 ## Introduction - tidy data set
 
 <div class="blue2"> In brief, when your data is tidy, each column is a variable, and each row is an observation. Tidy data is important because the consistent structure lets you focus your struggle on questions about the data, not fighting to get the data into the right form for different functions.</div> Hadley Wickham
@@ -240,7 +213,8 @@ In addition to the base R functionality of data wrangling (e.g., `subset`, `aggr
 You can find an exhaustive [translation table](http://www.significantdigits.org/2017/10/switching-from-base-r-to-tidyverse/) from [Rajesh Korde](http://www.significantdigits.org/).
 
 ## Selecting columns
-Select a subset of the columns of a data frame by names 
+Select a subset of the columns of a data frame by names.
+
 base R style:
 
 ```{r base R select, eval=TRUE, results='hide', warning=FALSE, message=FALSE, echo=TRUE}
@@ -385,7 +359,7 @@ dplyr::summarise(group_by(weather, origin, year), count_origin_year=n())
 # Datamanipulation - a workflow perspective
 
 ## The pipe operator
-**Goal**: Solve comples problems by combining simple, uniform pieces.
+**Goal**: Solve complex problems by combining simple, uniform pieces.
 
 <center>
 ![](figures/pipe.png){ width=40% }

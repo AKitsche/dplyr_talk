@@ -60,7 +60,7 @@ iris %>%
   group_by(Species) %>%
   summarise_all(mean)
 
-select_all(starwars, .funs = toupper)#all column names toupper
+select_all(starwars, .funs = toupper)#all column names to   upper
 select_if(starwars,  .predicate = is.double)#does not select variable height, because its integer
 
 starwars %>%
